@@ -1,0 +1,922 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ИИ в работе команды</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; background: #f0f2f5; color: #1a1a2e; }
+
+.header { background: #1a1a2e; color: white; padding: 22px 32px; }
+.header h1 { font-size: 22px; font-weight: 700; letter-spacing: -0.3px; }
+.header p { color: #8892b0; font-size: 14px; margin-top: 4px; }
+
+.tab-nav {
+  background: white;
+  border-bottom: 2px solid #e8eaed;
+  padding: 0 24px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+}
+.tab-group { display: flex; flex-wrap: wrap; }
+.tab-group-label {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: #aaa;
+  padding: 6px 10px 0;
+  width: 100%;
+  margin-top: 4px;
+}
+.tab-btn {
+  padding: 12px 15px;
+  border: none;
+  background: none;
+  cursor: pointer;
+  font-size: 13px;
+  color: #666;
+  border-bottom: 3px solid transparent;
+  transition: all 0.15s;
+  white-space: nowrap;
+  font-family: inherit;
+  margin-bottom: -2px;
+}
+.tab-btn:hover { color: #2c5f8a; background: #f8f9ff; }
+.tab-btn.active { color: #2c5f8a; border-bottom-color: #2c5f8a; font-weight: 600; }
+.tab-divider { width: 1px; background: #e8eaed; margin: 8px 6px; }
+
+.tab-content { display: none; max-width: 860px; margin: 32px auto; padding: 0 24px 60px; }
+.tab-content.active { display: block; }
+
+.role-header { margin-bottom: 28px; }
+.role-header h2 { font-size: 26px; color: #1a1a2e; margin-bottom: 10px; font-weight: 700; }
+.role-header .desc {
+  color: #444;
+  font-size: 14px;
+  line-height: 1.7;
+  background: #eef4fb;
+  padding: 14px 18px;
+  border-radius: 8px;
+  border-left: 4px solid #2c5f8a;
+}
+
+.section { margin-bottom: 32px; }
+.section-title {
+  font-size: 11px;
+  font-weight: 700;
+  color: #888;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin-bottom: 14px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid #e8eaed;
+}
+
+.cards { display: grid; gap: 10px; }
+.card {
+  background: white;
+  border-radius: 10px;
+  padding: 16px 20px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.07);
+  border-left: 3px solid #2c5f8a;
+}
+.card strong { color: #1a1a2e; display: block; margin-bottom: 5px; font-size: 14px; font-weight: 600; }
+.card p { color: #555; font-size: 13.5px; line-height: 1.65; }
+
+.questions-box {
+  background: white;
+  border-radius: 10px;
+  padding: 22px 26px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.07);
+}
+.questions-box ol { padding-left: 20px; }
+.questions-box li {
+  padding: 9px 0;
+  color: #333;
+  font-size: 14.5px;
+  line-height: 1.55;
+  border-bottom: 1px solid #f2f2f2;
+}
+.questions-box li:last-child { border-bottom: none; }
+.tip-box {
+  background: #fffbea;
+  border: 1px solid #f0d060;
+  border-radius: 7px;
+  padding: 11px 15px;
+  margin-top: 14px;
+  font-size: 13px;
+  color: #7a5800;
+  font-style: italic;
+}
+
+/* Priority map */
+.map-section { margin-bottom: 36px; }
+.map-role-title {
+  font-size: 16px;
+  font-weight: 700;
+  color: #1a1a2e;
+  margin-bottom: 10px;
+  padding-left: 4px;
+}
+.map-table {
+  width: 100%;
+  border-collapse: collapse;
+  background: white;
+  border-radius: 10px;
+  overflow: hidden;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.07);
+}
+.map-table th {
+  background: #f4f6f9;
+  padding: 10px 14px;
+  text-align: left;
+  font-size: 11px;
+  color: #888;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+.map-table td { padding: 10px 14px; border-top: 1px solid #f0f0f0; font-size: 13.5px; }
+.map-table tr:hover td { background: #fafbfc; }
+.badge {
+  display: inline-block;
+  padding: 3px 10px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+.badge-red { background: #fde8e8; color: #b91c1c; }
+.badge-yellow { background: #fef3c7; color: #92400e; }
+.badge-green { background: #d1fae5; color: #065f46; }
+
+/* Day matrix */
+.time-block {
+  background: white;
+  border-radius: 10px;
+  padding: 18px 22px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.07);
+  margin-bottom: 14px;
+}
+.time-label {
+  font-size: 12px;
+  font-weight: 700;
+  color: #2c5f8a;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin-bottom: 12px;
+}
+.time-table { width: 100%; border-collapse: collapse; }
+.time-table td { padding: 7px 10px; font-size: 13.5px; border-bottom: 1px solid #f5f5f5; vertical-align: top; }
+.time-table td:first-child { color: #888; font-weight: 600; width: 150px; white-space: nowrap; }
+.time-table tr:last-child td { border-bottom: none; }
+
+/* Methodology */
+.steps { display: grid; gap: 14px; }
+.step {
+  background: white;
+  border-radius: 10px;
+  padding: 18px 22px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.07);
+  display: flex;
+  gap: 18px;
+  align-items: flex-start;
+}
+.step-num {
+  background: #2c5f8a;
+  color: white;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  flex-shrink: 0;
+  font-size: 15px;
+}
+.step-body strong { display: block; font-size: 15px; margin-bottom: 5px; color: #1a1a2e; }
+.step-body p { color: #555; font-size: 13.5px; line-height: 1.65; }
+
+/* Human tasks */
+.human-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 12px; }
+.human-card {
+  background: white;
+  border-radius: 10px;
+  padding: 16px 18px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.07);
+  border-left: 4px solid #10b981;
+}
+.human-card strong { display: block; font-size: 14px; margin-bottom: 4px; color: #1a1a2e; }
+.human-card p { font-size: 13px; color: #666; line-height: 1.5; }
+
+/* Reference */
+.ref-table {
+  width: 100%;
+  border-collapse: collapse;
+  background: white;
+  border-radius: 10px;
+  overflow: hidden;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.07);
+  margin-bottom: 20px;
+}
+.ref-table th { background: #1a1a2e; color: white; padding: 11px 16px; text-align: left; font-size: 13px; }
+.ref-table td { padding: 11px 16px; border-top: 1px solid #f0f0f0; font-size: 13.5px; vertical-align: top; }
+.ref-table tr:nth-child(even) td { background: #f9fafb; }
+
+.info-box {
+  background: white;
+  border-radius: 10px;
+  padding: 20px 24px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.07);
+  margin-bottom: 16px;
+  font-size: 14px;
+  line-height: 1.7;
+  color: #444;
+}
+.info-box strong { color: #1a1a2e; }
+
+/* Common questions */
+.common-list { background: white; border-radius: 10px; padding: 22px 26px; box-shadow: 0 1px 3px rgba(0,0,0,0.07); }
+.common-list ol { padding-left: 20px; }
+.common-list li { padding: 10px 0; font-size: 15px; border-bottom: 1px solid #f2f2f2; line-height: 1.5; }
+.common-list li:last-child { border-bottom: none; }
+
+.legend { display: flex; gap: 20px; margin-bottom: 20px; flex-wrap: wrap; }
+.legend-item { display: flex; align-items: center; gap: 8px; font-size: 13px; color: #555; }
+
+h3.sub { font-size: 16px; color: #333; margin: 24px 0 12px; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>ИИ в работе команды</h1>
+  <p>Опросник + карта возможностей + план внедрения</p>
+</div>
+
+<div class="tab-nav">
+  <button class="tab-btn active" onclick="show('rop')">РОП</button>
+  <button class="tab-btn" onclick="show('logist')">Логист</button>
+  <button class="tab-btn" onclick="show('content')">Контент</button>
+  <button class="tab-btn" onclick="show('ozon')">Озон</button>
+  <button class="tab-btn" onclick="show('finance')">Финансист</button>
+  <button class="tab-btn" onclick="show('assistant')">Помощник</button>
+  <button class="tab-btn" onclick="show('product')">Продуктолог</button>
+  <button class="tab-btn" onclick="show('purchase')">Закупщик</button>
+  <button class="tab-btn" onclick="show('marketing')">Маркетинг</button>
+  <button class="tab-btn" onclick="show('strategy')">Директор</button>
+  <div class="tab-divider"></div>
+  <button class="tab-btn" onclick="show('common')">Общие вопросы</button>
+  <button class="tab-btn" onclick="show('map')">Карта приоритетов</button>
+  <button class="tab-btn" onclick="show('method')">Методология</button>
+  <button class="tab-btn" onclick="show('matrix')">Матрица дня</button>
+  <button class="tab-btn" onclick="show('ref')">Справка</button>
+</div>
+
+<!-- ===== РОП ===== -->
+<div id="tab-rop" class="tab-content active">
+  <div class="role-header">
+    <h2>РОП / Операционный директор</h2>
+    <div class="desc">Прочитай примеры — это то, что уже делают другие команды на маркетплейсах. Потом ответь на вопросы своими словами. Даже самые фантастические идеи — пиши.</div>
+  </div>
+  <div class="section">
+    <div class="section-title">Что уже делают другие</div>
+    <div class="cards">
+      <div class="card"><strong>Утренний брифинг в Telegram</strong><p>Бот присылает сводку: топ-5 артикулов по заказам вчера, аутсайдеры, где упала конверсия, где вырос ДРР. Вместо 3 таблиц — одно сообщение с выводами к 9 утра.</p></div>
+      <div class="card"><strong>Авто-флаги по аномалиям</strong><p>Если CTR упал на 20%+ за 2 дня — бот пишет: "Артикул 123456 — резкое падение трафика, проверь позицию в поиске и рекламу".</p></div>
+      <div class="card"><strong>Недельный отчёт с интерпретацией</strong><p>Не просто цифры, а: "На этой неделе лучший ДРР у артикула X, худший у Y — вот почему это могло произойти".</p></div>
+      <div class="card"><strong>Черновик задач в Kaiten</strong><p>ИИ анализирует данные и сам создаёт задачи: "Поднять ставку рекламы на артикул Z", "Проверить остатки по SKU 456".</p></div>
+      <div class="card"><strong>Симуляция цены</strong><p>Вводишь новую цену — ИИ считает как изменится ДРР, рентабельность, позиция в выдаче.</p></div>
+      <div class="card"><strong>Отмена автоакций</strong><p>Бот мониторит каждые несколько часов: нашёл артикул в автоакции → сразу выводит через API, без ручного захода в ЛК.</p></div>
+      <div class="card"><strong>Вход/выход из акций по алгоритму</strong><p>ИИ проверяет рентабельность, остаток, ДРР за 3 дня и решает: войти или выйти. Плюс оценивает — даёт ли акция реальный прирост заказов.</p></div>
+      <div class="card"><strong>Управление рекламой через мини-апп в Telegram</strong><p>Меняешь ставки, включаешь/выключаешь кампании прямо из Telegram — до 50 кампаний за раз, без захода в рекламный кабинет.</p></div>
+    </div>
+  </div>
+  <div class="section">
+    <div class="section-title">Вопросы</div>
+    <div class="questions-box">
+      <ol>
+        <li>Сколько времени в день тратишь на просмотр аналитики вручную?</li>
+        <li>Какие решения принимаешь каждый день — и хотел бы, чтобы данные для них уже были готовы?</li>
+        <li>Что чаще всего узнаёшь слишком поздно (например, что артикул "упал")?</li>
+        <li>Если бы у тебя был личный аналитик, который пишет каждое утро — что должно быть в его сообщении?</li>
+        <li>Твоя идея / фантазия: что должен делать ИИ, чтобы твоя работа стала легче?</li>
+      </ol>
+      <div class="tip-box">Последний вопрос — самый важный. Пиши даже если кажется нереальным.</div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== ЛОГИСТ ===== -->
+<div id="tab-logist" class="tab-content">
+  <div class="role-header">
+    <h2>Логист</h2>
+    <div class="desc">Прочитай примеры — это то, что уже делают другие команды на маркетплейсах. Потом ответь на вопросы своими словами.</div>
+  </div>
+  <div class="section">
+    <div class="section-title">Что уже делают другие</div>
+    <div class="cards">
+      <div class="card"><strong>Зона риска</strong><p>Таблица в реальном времени: артикул / дней до нуля / сколько на складе / продаж в день. Сортируется по критичности, обновляется автоматически.</p></div>
+      <div class="card"><strong>Алерт "скоро кончится"</strong><p>Бот присылает: "Артикул 789 — осталось на 8 дней продаж, пора планировать поставку". Никаких ручных проверок.</p></div>
+      <div class="card"><strong>Авто-расчёт поставки</strong><p>ИИ смотрит скорость продаж, остатки на ФФ и складах МП, и считает сколько и когда нужно отгрузить чтобы не уйти в out-of-stock.</p></div>
+      <div class="card"><strong>Черновик поставки</strong><p>ИИ формирует список артикулов и количеств, ты только проверяешь и корректируешь.</p></div>
+      <div class="card"><strong>Свободные слоты для поставки</strong><p>Бот проверяет доступные слоты на складах WB/Ozon через API и сразу показывает что есть и на когда.</p></div>
+      <div class="card"><strong>Трекинг статусов поставок</strong><p>Бот отслеживает поставки и пишет когда что-то приехало, принято или зависло.</p></div>
+      <div class="card"><strong>Авто-сверка инвентаризации</strong><p>Загружаешь данные с ФФ — ИИ сравнивает с таблицей и подсвечивает расхождения.</p></div>
+      <div class="card"><strong>Мониторинг ИЛ и ИРП</strong><p>Бот отслеживает индексы каждую неделю, строит историю. Если ИЛ падает — даёт конкретные советы: с каких складов FBO пополнить, какие регионы проседают.</p></div>
+    </div>
+  </div>
+  <div class="section">
+    <div class="section-title">Вопросы</div>
+    <div class="questions-box">
+      <ol>
+        <li>Как сейчас понимаешь что пора делать поставку? Откуда берёшь данные?</li>
+        <li>Что в логистике занимает больше всего времени и делается вручную?</li>
+        <li>Бывает ли что узнаёшь об out-of-stock постфактум? Как часто?</li>
+        <li>Что сейчас считаешь в голове или черновике — и хотел бы автоматизировать?</li>
+        <li>Твоя идея / фантазия: что должен делать ИИ, чтобы твоя работа стала легче?</li>
+      </ol>
+      <div class="tip-box">Последний вопрос — самый важный. Пиши даже если кажется нереальным.</div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== КОНТЕНТ ===== -->
+<div id="tab-content" class="tab-content">
+  <div class="role-header">
+    <h2>Контент-менеджер (+ операционка ВБ)</h2>
+    <div class="desc">Прочитай примеры — это то, что уже делают другие команды. Потом ответь на вопросы своими словами.</div>
+  </div>
+  <div class="section">
+    <div class="section-title">Что уже делают другие</div>
+    <div class="cards">
+      <div class="card"><strong>Генерация и улучшение описаний</strong><p>Вставляешь старое описание — ИИ переписывает под SEO WB/Ozon с нужными ключами, в нужном тоне.</p></div>
+      <div class="card"><strong>Анализ отзывов своих карточек</strong><p>ИИ читает все отзывы за месяц и выдаёт: "Чаще всего хвалят посадку, чаще всего жалуются на цвет не как на фото" → сразу понятно что фиксить.</p></div>
+      <div class="card"><strong>Чеклист карточки</strong><p>Загружаешь карточку — ИИ проверяет: заполнены ли все поля, соответствует ли описание фото, есть ли ключевые слова.</p></div>
+      <div class="card"><strong>Авто-ответы на отзывы</strong><p>ИИ читает текст отзыва, оценку, плюсы и минусы — и пишет персональный ответ с именем и конкретикой. На негатив — извинение и решение, на позитив — благодарность с подхватом темы.</p></div>
+      <div class="card"><strong>CRM для автоотзывов с ИИ</strong><p>Вместо скрипта без интерфейса: мини-система где видны все отзывы, ИИ предлагает ответ, ты одним кликом публикуешь или редактируешь.</p></div>
+      <div class="card"><strong>Промты для Нана Банана</strong><p>Готовая библиотека промтов под разные задачи (фон, модель, сезонность, стиль) — чтобы каждый раз не придумывать заново.</p></div>
+      <div class="card"><strong>Агент анализа конкурентов → ТЗ дизайнеру</strong><p>Даёшь запрос ("мужская рубашка льняная") — агент сам идёт в МП Статс, берёт топ-10 по выручке, читает отзывы, выписывает боли, смотрит структуру карточек. Выдаёт: список болей + какие слайды нужны + ТЗ для дизайнера.</p></div>
+    </div>
+  </div>
+  <div class="section">
+    <div class="section-title">Вопросы</div>
+    <div class="questions-box">
+      <ol>
+        <li>Сколько времени уходит на создание/обновление одной карточки?</li>
+        <li>Что в работе с карточками повторяется и раздражает больше всего?</li>
+        <li>Как сейчас отслеживаешь, почему карточка "не работает"?</li>
+        <li>Если бы ИИ мог взять на себя одну задачу из твоего дня — что бы это было?</li>
+        <li>Твоя идея / фантазия: что должен делать ИИ, чтобы твоя работа стала легче?</li>
+      </ol>
+      <div class="tip-box">Последний вопрос — самый важный. Пиши даже если кажется нереальным.</div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== ОЗОН ===== -->
+<div id="tab-ozon" class="tab-content">
+  <div class="role-header">
+    <h2>Менеджер Озон</h2>
+    <div class="desc">Прочитай примеры — это то, что уже делают другие команды. Потом ответь на вопросы своими словами.</div>
+  </div>
+  <div class="section">
+    <div class="section-title">Что уже делают другие</div>
+    <div class="cards">
+      <div class="card"><strong>Ежедневный дайджест по Озон</strong><p>Заказы, выкупы, рекламный бюджет, ДРР — всё в одном сообщении в Telegram без захода в ЛК.</p></div>
+      <div class="card"><strong>Алерт на изменение комиссий/условий Озон</strong><p>Бот мониторит официальные каналы Озон и пишет если что-то поменялось по твоим категориям.</p></div>
+      <div class="card"><strong>Сравнение план/факт с объяснением</strong><p>План был 50 заказов, факт 31 — ИИ пишет гипотезы: праздник, конкурент снизил цену, упала реклама.</p></div>
+      <div class="card"><strong>Рекомендации по рекламным ставкам</strong><p>ИИ анализирует CPC и конверсию и предлагает где поднять / снизить ставку.</p></div>
+      <div class="card"><strong>Вход/выход из акций Озон по алгоритму</strong><p>ИИ проверяет рентабельность и остаток и решает: участвовать в акции или нет. Отмена автоакций без ручного вмешательства.</p></div>
+      <div class="card"><strong>Мониторинг конкурентов</strong><p>Отслеживает цены конкурентов в нише — алерт если кто-то резко демпингует.</p></div>
+    </div>
+  </div>
+  <div class="section">
+    <div class="section-title">Вопросы</div>
+    <div class="questions-box">
+      <ol>
+        <li>Какие действия на Озон ты делаешь каждый день по одному и тому же алгоритму?</li>
+        <li>Что чаще всего "прилетает" неожиданно и выбивает из рабочего ритма?</li>
+        <li>Сколько времени тратишь на мониторинг конкурентов? Как это делаешь сейчас?</li>
+        <li>Если бы утром тебе приходило одно сообщение про Озон — что должно в нём быть?</li>
+        <li>Твоя идея / фантазия: что должен делать ИИ, чтобы твоя работа стала легче?</li>
+      </ol>
+      <div class="tip-box">Последний вопрос — самый важный. Пиши даже если кажется нереальным.</div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== ФИНАНСИСТ ===== -->
+<div id="tab-finance" class="tab-content">
+  <div class="role-header">
+    <h2>Финансовый менеджер</h2>
+    <div class="desc">Прочитай примеры — это то, что уже делают другие команды. Потом ответь на вопросы своими словами.</div>
+  </div>
+  <div class="section">
+    <div class="section-title">Что уже делают другие</div>
+    <div class="cards">
+      <div class="card"><strong>Ежедневный P&amp;L в Telegram</strong><p>Выручка, себестоимость, комиссии МП, реклама, маржа — одним сообщением без открытия таблиц.</p></div>
+      <div class="card"><strong>Прогноз кассового разрыва</strong><p>ИИ смотрит на план поставок, выплаты от МП и текущий баланс — предупреждает если через 2 недели будет дефицит.</p></div>
+      <div class="card"><strong>Авто-юнит-экономика</strong><p>Меняешь цену или ставку рекламы — ИИ сразу пересчитывает рентабельность по всем артикулам. Видно какой SKU съедает 12% за хранение.</p></div>
+      <div class="card"><strong>Аномалии в расходах</strong><p>ИИ замечает: "В этом месяце расходы на рекламу выросли на 40%, а заказы на 5% — стоит разобраться".</p></div>
+      <div class="card"><strong>Товарный учёт</strong><p>Сводит остатки с ФФ, склада МП и данных поставщика в единую таблицу — подсвечивает расхождения.</p></div>
+      <div class="card"><strong>Платёжный календарь</strong><p>ИИ строит план: когда ожидать выплаты от WB/Ozon, когда платить поставщику, когда налоги — кассовая картина на 4 недели вперёд.</p></div>
+      <div class="card"><strong>Расчёт ФОТ по KPI</strong><p>На основе плановых показателей и факта автоматически считает переменную часть зарплат и готовит выгрузку для бухгалтера.</p></div>
+      <div class="card"><strong>Еженедельный отчёт для директора</strong><p>ИИ формирует финансовую сводку в нужном формате раз в неделю автоматически — без участия финансиста.</p></div>
+    </div>
+  </div>
+  <div class="section">
+    <div class="section-title">Вопросы</div>
+    <div class="questions-box">
+      <ol>
+        <li>Какие отчёты готовишь регулярно — и сколько времени это занимает?</li>
+        <li>Откуда чаще всего приходят "сюрпризы" в финансах — что хотелось бы видеть заранее?</li>
+        <li>Какие расчёты делаешь вручную каждую неделю?</li>
+        <li>Если бы ИИ мог взять одну финансовую задачу — что бы это было?</li>
+        <li>Твоя идея / фантазия: что должен делать ИИ, чтобы твоя работа стала легче?</li>
+      </ol>
+      <div class="tip-box">Последний вопрос — самый важный. Пиши даже если кажется нереальным.</div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== ПОМОЩНИК ===== -->
+<div id="tab-assistant" class="tab-content">
+  <div class="role-header">
+    <h2>Ассистент руководителя</h2>
+    <div class="desc">Прочитай примеры — это то, что уже делают другие команды. Потом ответь на вопросы своими словами.</div>
+  </div>
+  <div class="section">
+    <div class="section-title">Что уже делают другие</div>
+    <div class="cards">
+      <div class="card"><strong>Саммари звонков и созвонов</strong><p>После рабочего созвона ИИ делает краткое резюме: что обсудили, какие задачи поставили, кто за что отвечает.</p></div>
+      <div class="card"><strong>Поиск кандидатов</strong><p>ИИ помогает составить вакансию, проверить резюме на соответствие, составить вопросы для интервью.</p></div>
+      <div class="card"><strong>Авто-напоминания команде</strong><p>Бот рассылает напоминания о задачах, дедлайнах, созвонах по расписанию — никто ничего не забывает.</p></div>
+      <div class="card"><strong>Шаблоны коммуникаций</strong><p>ИИ помогает писать письма, офферы, отказы кандидатам в нужном тоне.</p></div>
+      <div class="card"><strong>Онбординг нового сотрудника</strong><p>Агент объясняет процессы компании и отвечает на вопросы нового человека — без отвлечения всей команды.</p></div>
+      <div class="card"><strong>Мониторинг настроения команды</strong><p>Периодически спрашивает у каждого короткий check-in, собирает анонимно и присылает тебе сводку.</p></div>
+    </div>
+  </div>
+  <div class="section">
+    <div class="section-title">Вопросы</div>
+    <div class="questions-box">
+      <ol>
+        <li>Что из организационных задач занимает больше всего времени?</li>
+        <li>Что повторяется каждую неделю и хотелось бы автоматизировать?</li>
+        <li>Как сейчас фиксируете итоги созвонов — и теряется ли что-то?</li>
+        <li>Что в поиске/онбординге сотрудников самое трудоёмкое?</li>
+        <li>Твоя идея / фантазия: что должен делать ИИ, чтобы твоя работа стала легче?</li>
+      </ol>
+      <div class="tip-box">Последний вопрос — самый важный. Пиши даже если кажется нереальным.</div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== ПРОДУКТОЛОГ ===== -->
+<div id="tab-product" class="tab-content">
+  <div class="role-header">
+    <h2>Продуктолог</h2>
+    <div class="desc">Прочитай примеры — это то, что уже делают другие команды. Потом ответь на вопросы своими словами.</div>
+  </div>
+  <div class="section">
+    <div class="section-title">Что уже делают другие</div>
+    <div class="cards">
+      <div class="card"><strong>Тренд-бук через МП Статс</strong><p>ИИ анализирует растущие запросы в категории, залетевшие новинки конкурентов, сезонные пики — и собирает в отчёт: что стоит запустить следующим.</p></div>
+      <div class="card"><strong>Конкурентный анализ ассортимента</strong><p>ИИ собирает данные по топ-20 конкурентам: цены, рейтинги, количество отзывов, скорость роста.</p></div>
+      <div class="card"><strong>Гипотезы для новых SKU</strong><p>На основе данных о продажах и трендов ИИ предлагает: "Стоит рассмотреть льняные рубашки — спрос растёт, конкуренция низкая".</p></div>
+      <div class="card"><strong>Анализ отзывов конкурентов</strong><p>ИИ читает тысячи отзывов конкурентов и выдаёт: на что жалуются, что хвалят — прямые подсказки для нашего продукта.</p></div>
+      <div class="card"><strong>Производственный план для новинок</strong><p>На основе тренда, сезона и скорости продаж аналогов ИИ считает: сколько единиц заказать на первую партию, на какие размеры сделать акцент.</p></div>
+      <div class="card"><strong>Анализ ЦА → продуктовая матрица</strong><p>ИИ собирает портрет покупателя и генерирует: карточку товара, концепцию упаковки, скрипт продаж, ответы на возражения, продуктовую матрицу.</p></div>
+      <div class="card"><strong>Тест-матрица</strong><p>Помогает структурировать продуктовые гипотезы и отслеживать результаты тестов.</p></div>
+    </div>
+  </div>
+  <div class="section">
+    <div class="section-title">Вопросы</div>
+    <div class="questions-box">
+      <ol>
+        <li>Как сейчас ищешь идеи для новых продуктов или улучшений?</li>
+        <li>Сколько времени занимает анализ конкурентов? Как делаешь это сейчас?</li>
+        <li>Где чаще всего "зависаешь" из-за нехватки данных?</li>
+        <li>Если бы ИИ мог исследовать рынок за тебя — что именно ты бы хотел получить на выходе?</li>
+        <li>Твоя идея / фантазия: что должен делать ИИ, чтобы твоя работа стала легче?</li>
+      </ol>
+      <div class="tip-box">Последний вопрос — самый важный. Пиши даже если кажется нереальным.</div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== ЗАКУПЩИК ===== -->
+<div id="tab-purchase" class="tab-content">
+  <div class="role-header">
+    <h2>Закупщик</h2>
+    <div class="desc">Прочитай примеры — это то, что уже делают другие команды. Потом ответь на вопросы своими словами.</div>
+  </div>
+  <div class="section">
+    <div class="section-title">Что уже делают другие</div>
+    <div class="cards">
+      <div class="card"><strong>Мониторинг цен у поставщиков</strong><p>ИИ отслеживает прайсы и присылает алерт если цена на позицию выросла или появился более выгодный вариант.</p></div>
+      <div class="card"><strong>Расчёт повторного заказа</strong><p>На основе скорости продаж и остатков ИИ считает: когда и сколько заказывать у поставщика — чтобы не уйти в дефицит и не затоварить склад.</p></div>
+      <div class="card"><strong>Бриф на производство</strong><p>ИИ на основе анализа ЦА, трендов и данных о продажах формирует ТЗ: какой товар, характеристики, сколько единиц, на какие размеры акцент.</p></div>
+      <div class="card"><strong>Сравнение поставщиков</strong><p>По описанию нужного товара ИИ структурирует предложения от нескольких поставщиков в таблицу: цена, сроки, минималка, условия.</p></div>
+      <div class="card"><strong>Документооборот</strong><p>Помогает заполнять стандартные документы (спецификации, договоры), проверяет комплектность пакета ВЭД.</p></div>
+    </div>
+  </div>
+  <div class="section">
+    <div class="section-title">Вопросы</div>
+    <div class="questions-box">
+      <ol>
+        <li>Как сейчас понимаешь когда пора делать повторный заказ у поставщика?</li>
+        <li>Сколько времени занимает подготовка брифа или спецификации?</li>
+        <li>Как сейчас сравниваешь предложения от разных поставщиков?</li>
+        <li>Что в документообороте занимает больше всего времени?</li>
+        <li>Твоя идея / фантазия: что должен делать ИИ, чтобы твоя работа стала легче?</li>
+      </ol>
+      <div class="tip-box">Последний вопрос — самый важный. Пиши даже если кажется нереальным.</div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== МАРКЕТИНГ ===== -->
+<div id="tab-marketing" class="tab-content">
+  <div class="role-header">
+    <h2>Маркетинг / Внешний трафик</h2>
+    <div class="desc">Прочитай примеры — это то, что уже делают другие команды. Потом ответь на вопросы своими словами.</div>
+  </div>
+  <div class="section">
+    <div class="section-title">Что уже делают другие</div>
+    <div class="cards">
+      <div class="card"><strong>Бриф для блогера</strong><p>ИИ составляет ТЗ на интеграцию: что показать, какие боли закрыть, что нельзя говорить, CTA — за минуты вместо часов.</p></div>
+      <div class="card"><strong>Подбор блогеров</strong><p>ИИ анализирует блогеров по нише: аудитория, ER, соответствие нашему продукту, примерная стоимость интеграции.</p></div>
+      <div class="card"><strong>Контент-план на месяц</strong><p>ИИ генерирует план видео и фотосъёмок: темы, форматы, ключевые сообщения под каждый артикул.</p></div>
+      <div class="card"><strong>SMM для страниц бренда на WB/Ozon</strong><p>ИИ генерирует посты, описания акций для брендзоны в нужном тоне и под нужную аудиторию.</p></div>
+      <div class="card"><strong>Анализ внешнего трафика</strong><p>Отслеживает откуда приходят покупатели, какие каналы дают конверсию, где сливается бюджет.</p></div>
+    </div>
+  </div>
+  <div class="section">
+    <div class="section-title">Вопросы</div>
+    <div class="questions-box">
+      <ol>
+        <li>Как сейчас ищете и отбираете блогеров для интеграций?</li>
+        <li>Сколько времени уходит на подготовку брифа или ТЗ для блогера?</li>
+        <li>Как отслеживаете эффект от внешнего трафика?</li>
+        <li>Что в контент-производстве повторяется и можно было бы стандартизировать?</li>
+        <li>Твоя идея / фантазия: что должен делать ИИ, чтобы твоя работа стала легче?</li>
+      </ol>
+      <div class="tip-box">Последний вопрос — самый важный. Пиши даже если кажется нереальным.</div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== СТРАТЕГИЯ ===== -->
+<div id="tab-strategy" class="tab-content">
+  <div class="role-header">
+    <h2>Директор</h2>
+    <div class="desc">ИИ не принимает стратегические решения — но может готовить к ним. Прочитай примеры, потом ответь на вопросы.</div>
+  </div>
+  <div class="section">
+    <div class="section-title">Что уже делают другие</div>
+    <div class="cards">
+      <div class="card"><strong>Сбор данных для стратсессии</strong><p>ИИ за час собирает полное положение дел: выручка, маржа, динамика vs год назад по каждому направлению — вместо недели ручной работы.</p></div>
+      <div class="card"><strong>Анализ новой ниши</strong><p>Задаёшь категорию — агент исследует: объём рынка, топ игроки, средняя маржа, конкурентная среда, сезонность. Готовый бриф для принятия решения.</p></div>
+      <div class="card"><strong>Сценарное планирование</strong><p>"Что будет с выручкой и юниткой если войдём в категорию X с ценой Y" — ИИ моделирует несколько вариантов с разными вводными.</p></div>
+      <div class="card"><strong>Трекинг целей квартала</strong><p>Раз в неделю бот присылает: где стоим по ключевым метрикам vs план, что впереди плана, что отстаёт и почему.</p></div>
+      <div class="card"><strong>Подготовка к стратсессии</strong><p>Агент собирает данные по всем отделам и структурирует в документ: что сделали, что не получилось, ключевые выводы, предложения на следующий квартал.</p></div>
+    </div>
+  </div>
+  <div class="section">
+    <div class="section-title">Вопросы</div>
+    <div class="questions-box">
+      <ol>
+        <li>Как сейчас готовишься к квартальным стратегическим сессиям — сколько времени уходит на сбор данных?</li>
+        <li>Как оцениваешь новую нишу или категорию перед входом? Откуда берёшь информацию?</li>
+        <li>Как часто отслеживаешь прогресс по целям квартала и как это сейчас устроено?</li>
+        <li>Если бы ИИ готовил аналитику для стратегических решений — что должно быть в таком отчёте?</li>
+        <li>Твоя идея / фантазия: как ИИ мог бы помочь думать стратегически?</li>
+      </ol>
+      <div class="tip-box">Последний вопрос — самый важный. Пиши даже если кажется нереальным.</div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== ОБЩИЕ ВОПРОСЫ ===== -->
+<div id="tab-common" class="tab-content">
+  <div class="role-header">
+    <h2>Общие вопросы — для всех</h2>
+    <div class="desc">Эти вопросы — для каждого члена команды, независимо от роли.</div>
+  </div>
+  <div class="section">
+    <div class="common-list">
+      <ol>
+        <li>Оцени от 1 до 5: насколько ты открыт к тому, чтобы ИИ помогал в твоей работе?</li>
+        <li>Чего боишься или опасаешься в связи с внедрением ИИ?</li>
+        <li>Есть ли задача, которую ты делаешь каждый день и которая тебя раздражает больше всего?</li>
+        <li>Какой результат от внедрения ИИ сделал бы тебя счастливым через 3 месяца?</li>
+      </ol>
+    </div>
+  </div>
+</div>
+
+<!-- ===== КАРТА ПРИОРИТЕТОВ ===== -->
+<div id="tab-map" class="tab-content">
+  <div class="role-header">
+    <h2>Карта всех возможностей</h2>
+    <div class="desc">Все идеи по ролям с оценкой сложности реализации.</div>
+  </div>
+  <div class="legend">
+    <div class="legend-item"><span class="badge badge-red">Быстро</span> — автоматизация, мало кода, сразу даёт ценность</div>
+    <div class="legend-item"><span class="badge badge-yellow">Средний горизонт</span> — агентная логика, интеграции</div>
+    <div class="legend-item"><span class="badge badge-green">Долгосрочно</span> — сложные агенты, продуктовые решения</div>
+  </div>
+
+  <div class="map-section">
+    <div class="map-role-title">РОП / Операционный директор</div>
+    <table class="map-table">
+      <tr><th>Приоритет</th><th>Что делает</th></tr>
+      <tr><td><span class="badge badge-red">Быстро</span></td><td>Утренний брифинг по своим данным (заказы, ДРР, конверсия)</td></tr>
+      <tr><td><span class="badge badge-red">Быстро</span></td><td>Авто-флаги аномалий (CTR упал, ДРР вырос)</td></tr>
+      <tr><td><span class="badge badge-red">Быстро</span></td><td>Отмена автоакций через API — без ручного захода в ЛК</td></tr>
+      <tr><td><span class="badge badge-yellow">Средний</span></td><td>Вход/выход из акций по алгоритму (маржа + остаток + эффект акции)</td></tr>
+      <tr><td><span class="badge badge-yellow">Средний</span></td><td>Управление рекламой через мини-апп в Telegram</td></tr>
+      <tr><td><span class="badge badge-yellow">Средний</span></td><td>Симуляция цены → как изменится ДРР и рентабельность</td></tr>
+      <tr><td><span class="badge badge-yellow">Средний</span></td><td>Черновики задач в Kaiten на основе данных</td></tr>
+      <tr><td><span class="badge badge-green">Долго</span></td><td>Операционный агент: фоновый мониторинг + защита маржи + авторешения</td></tr>
+    </table>
+  </div>
+
+  <div class="map-section">
+    <div class="map-role-title">Логист</div>
+    <table class="map-table">
+      <tr><th>Приоритет</th><th>Что делает</th></tr>
+      <tr><td><span class="badge badge-red">Быстро</span></td><td>Зона риска — таблица: артикул / дней до 0 / продаж в день</td></tr>
+      <tr><td><span class="badge badge-red">Быстро</span></td><td>Алерты "скоро кончится" в Telegram</td></tr>
+      <tr><td><span class="badge badge-red">Быстро</span></td><td>Мониторинг ИЛ и ИРП + история по неделям</td></tr>
+      <tr><td><span class="badge badge-yellow">Средний</span></td><td>Советы по поднятию ИЛ: с каких складов пополнить, какие регионы проседают</td></tr>
+      <tr><td><span class="badge badge-yellow">Средний</span></td><td>Авто-расчёт поставки вместо ручного Поставлено</td></tr>
+      <tr><td><span class="badge badge-yellow">Средний</span></td><td>Свободные слоты на складах WB/Ozon через API</td></tr>
+      <tr><td><span class="badge badge-yellow">Средний</span></td><td>Распределение по складам: средняя логистика р/ед, суммы, количество доставок</td></tr>
+      <tr><td><span class="badge badge-green">Долго</span></td><td>Агент логистики: полный цикл от расчёта до черновика поставки</td></tr>
+    </table>
+  </div>
+
+  <div class="map-section">
+    <div class="map-role-title">Контент-менеджер</div>
+    <table class="map-table">
+      <tr><th>Приоритет</th><th>Что делает</th></tr>
+      <tr><td><span class="badge badge-red">Быстро</span></td><td>Библиотека промтов для Нана Банана (фон, модель, сезон, стиль)</td></tr>
+      <tr><td><span class="badge badge-red">Быстро</span></td><td>Авто-ответы на отзывы: черновик → одобрение → публикация</td></tr>
+      <tr><td><span class="badge badge-red">Быстро</span></td><td>Чеклист карточки: все поля, ключи, соответствие фото</td></tr>
+      <tr><td><span class="badge badge-yellow">Средний</span></td><td>CRM для отзывов с ИИ-рекомендацией (замена скрипта на интерфейс)</td></tr>
+      <tr><td><span class="badge badge-yellow">Средний</span></td><td>Анализ отзывов своих карточек: боли, похвалы, что фиксить</td></tr>
+      <tr><td><span class="badge badge-yellow">Средний</span></td><td>Генерация и SEO-переработка описаний под WB/Ozon</td></tr>
+      <tr><td><span class="badge badge-green">Долго</span></td><td>Агент анализа конкурентов → боли из отзывов + ТЗ для дизайнера + слайды</td></tr>
+    </table>
+  </div>
+
+  <div class="map-section">
+    <div class="map-role-title">Менеджер Озон</div>
+    <table class="map-table">
+      <tr><th>Приоритет</th><th>Что делает</th></tr>
+      <tr><td><span class="badge badge-red">Быстро</span></td><td>Ежедневный дайджест Озон: заказы, выкупы, ДРР, бюджет — в Telegram</td></tr>
+      <tr><td><span class="badge badge-red">Быстро</span></td><td>Алерты на изменения комиссий и условий Озон</td></tr>
+      <tr><td><span class="badge badge-yellow">Средний</span></td><td>Вход/выход из акций Озон по алгоритму</td></tr>
+      <tr><td><span class="badge badge-yellow">Средний</span></td><td>Рекомендации по рекламным ставкам (CPC + конверсия)</td></tr>
+      <tr><td><span class="badge badge-yellow">Средний</span></td><td>Сравнение план/факт с гипотезами почему так вышло</td></tr>
+      <tr><td><span class="badge badge-green">Долго</span></td><td>Мониторинг демпинга конкурентов с алертами</td></tr>
+    </table>
+  </div>
+
+  <div class="map-section">
+    <div class="map-role-title">Финансовый менеджер</div>
+    <table class="map-table">
+      <tr><th>Приоритет</th><th>Что делает</th></tr>
+      <tr><td><span class="badge badge-red">Быстро</span></td><td>Ежедневный P&amp;L в Telegram: выручка, себестоимость, маржа</td></tr>
+      <tr><td><span class="badge badge-red">Быстро</span></td><td>Аномалии в расходах: реклама выросла на 40%, заказы на 5%</td></tr>
+      <tr><td><span class="badge badge-yellow">Средний</span></td><td>Авто-юнит-экономика: меняешь цену — ИИ пересчитывает рентабельность</td></tr>
+      <tr><td><span class="badge badge-yellow">Средний</span></td><td>Платёжный календарь: выплаты МП + поставщики + налоги на 4 недели вперёд</td></tr>
+      <tr><td><span class="badge badge-yellow">Средний</span></td><td>Товарный учёт: единая сводка ФФ + МП + поставщик</td></tr>
+      <tr><td><span class="badge badge-yellow">Средний</span></td><td>Прогноз кассового разрыва: поставки + выплаты МП + баланс</td></tr>
+      <tr><td><span class="badge badge-green">Долго</span></td><td>Расчёт ФОТ по KPI + выгрузка для бухгалтера</td></tr>
+      <tr><td><span class="badge badge-green">Долго</span></td><td>Еженедельный отчёт для директора — формируется автоматически</td></tr>
+    </table>
+  </div>
+
+  <div class="map-section">
+    <div class="map-role-title">Продуктолог</div>
+    <table class="map-table">
+      <tr><th>Приоритет</th><th>Что делает</th></tr>
+      <tr><td><span class="badge badge-red">Быстро</span></td><td>Тренд-бук: растущие запросы, залетевшие новинки, сезонные пики</td></tr>
+      <tr><td><span class="badge badge-yellow">Средний</span></td><td>Анализ отзывов конкурентов → боли покупателей → идеи для продукта</td></tr>
+      <tr><td><span class="badge badge-yellow">Средний</span></td><td>Конкурентный анализ ассортимента топ-20 по выручке</td></tr>
+      <tr><td><span class="badge badge-yellow">Средний</span></td><td>Производственный план для новинки: сколько заказать, на какие размеры</td></tr>
+      <tr><td><span class="badge badge-green">Долго</span></td><td>Анализ ЦА → карточка + упаковка + скрипт продаж + продуктовая матрица</td></tr>
+    </table>
+  </div>
+
+  <div class="map-section">
+    <div class="map-role-title">Ассистент руководителя<v>
+    <table class="map-table">
+      <tr><th>Приоритет</th><th>Что делает</th></tr>
+      <tr><td><span class="badge badge-red">Быстро</span></td><td>Саммари созвонов: что решили, кто за что отвечает</td></tr>
+      <tr><td><span class="badge badge-red">Быстро</span></td><td>Авто-напоминания команде о задачах и дедлайнах</td></tr>
+      <tr><td><span class="badge badge-yellow">Средний</span></td><td>Помощь с вакансиями, проверка резюме, вопросы для интервью</td></tr>
+      <tr><td><span class="badge badge-yellow">Средний</span></td><td>Онбординг нового сотрудника: агент объясняет процессы</td></tr>
+      <tr><td><span class="badge badge-green">Долго</span></td><td>Анонимный check-in настроения команды → сводка тебе</td></tr>
+    </table>
+  </div>
+
+  <div class="map-section">
+    <div class="map-role-title">Закупщик</div>
+    <table class="map-table">
+      <tr><th>Приоритет</th><th>Что делает</th></tr>
+      <tr><td><span class="badge badge-red">Быстро</span></td><td>Мониторинг цен у поставщиков + алерт при изменении</td></tr>
+      <tr><td><span class="badge badge-yellow">Средний</span></td><td>Расчёт повторного заказа: когда и сколько, чтобы не уйти в дефицит</td></tr>
+      <tr><td><span class="badge badge-yellow">Средний</span></td><td>Бриф на производство: характеристики, количество, размерная сетка</td></tr>
+      <tr><td><span class="badge badge-yellow">Средний</span></td><td>Сравнительная таблица поставщиков по условиям</td></tr>
+      <tr><td><span class="badge badge-green">Долго</span></td><td>Помощь с документооборотом ВЭД</td></tr>
+    </table>
+  </div>
+
+  <div class="map-section">
+    <div class="map-role-title">Маркетинг / Внешний трафик</div>
+    <table class="map-table">
+      <tr><th>Приоритет</th><th>Что делает</th></tr>
+      <tr><td><span class="badge badge-red">Быстро</span></td><td>Бриф для блогера: что показать, ключевые сообщения, CTA</td></tr>
+      <tr><td><span class="badge badge-red">Быстро</span></td><td>Контент-план на месяц: темы, форматы, артикулы</td></tr>
+      <tr><td><span class="badge badge-yellow">Средний</span></td><td>Подбор блогеров: ниша, аудитория, ER, стоимость</td></tr>
+      <tr><td><span class="badge badge-yellow">Средний</span></td><td>SMM для страниц бренда на WB/Ozon</td></tr>
+      <tr><td><span class="badge badge-green">Долго</span></td><td>Анализ эффективности внешнего трафика по каналам</td></tr>
+    </table>
+  </div>
+
+  <div class="map-section">
+    <div class="map-role-title">Директор</div>
+    <table class="map-table">
+      <tr><th>Приоритет</th><th>Что делает</th></tr>
+      <tr><td><span class="badge badge-red">Быстро</span></td><td>Трекинг целей квартала: раз в неделю — где стоим vs план</td></tr>
+      <tr><td><span class="badge badge-yellow">Средний</span></td><td>Сбор данных для стратсессии по всем отделам</td></tr>
+      <tr><td><span class="badge badge-yellow">Средний</span></td><td>Анализ новой ниши: объём, конкуренция, маржа, сезонность</td></tr>
+      <tr><td><span class="badge badge-green">Долго</span></td><td>Сценарное планирование: несколько вариантов развития</td></tr>
+      <tr><td><span class="badge badge-green">Долго</span></td><td>Автоматическая подготовка материалов к квартальной сессии</td></tr>
+    </table>
+  </div>
+
+  <div class="map-section">
+    <div class="map-role-title">Общая инфраструктура (для всей команды)</div>
+    <table class="map-table">
+      <tr><th>Приоритет</th><th>Что делает</th></tr>
+      <tr><td><span class="badge badge-red">Быстро</span></td><td>База знаний: YouTube → субтитры → Claude выжимает советы → Google Sheet с тегами</td></tr>
+      <tr><td><span class="badge badge-red">Быстро</span></td><td>Дайджест новостей МП в Telegram (уже сделано ✓)</td></tr>
+      <tr><td><span class="badge badge-yellow">Средний</span></td><td>РНП дашборд: план/факт, остатки, зона риска, индексы — одна страница</td></tr>
+      <tr><td><span class="badge badge-yellow">Средний</span></td><td>Дневник действий: ручное логирование решений + ИИ-анализ паттернов</td></tr>
+      <tr><td><span class="badge badge-green">Долго</span></td><td>Скилл для API-документации WB/Ozon — быстрый доступ к актуальным эндпоинтам</td></tr>
+      <tr><td><span class="badge badge-green">Долго</span></td><td>Агент сезонного планирования: история продаж + тренды → прогноз по месяцам</td></tr>
+      <tr><td><span class="badge badge-green">Долго</span></td><td>Агент анализа возвратов: какие артикулы возвращают, почему, что фиксить</td></tr>
+    </table>
+  </div>
+</div>
+
+<!-- ===== МЕТОДОЛОГИЯ ===== -->
+<div id="tab-method" class="tab-content">
+  <div class="role-header">
+    <h2>Методология внедрения: 6 шагов</h2>
+    <div class="desc">Для каждой роли, которую хотим автоматизировать — идём по этим шагам по порядку.</div>
+  </div>
+  <div class="steps">
+    <div class="step">
+      <div class="step-num">1</div>
+      <div class="step-body"><strong>Описываем полный функционал роли</strong><p>Что сотрудник делает каждый день, каждую неделю, каждый месяц. Без этого нельзя понять что автоматизировать. Опросник в этом документе — инструмент для этого шага.</p></div>
+    </div>
+    <div class="step">
+      <div class="step-num">2</div>
+      <div class="step-body"><strong>Составляем матрицу дня</strong><p>Разбиваем задачи по трём ритмам: ежедневно / еженедельно / ежемесячно. Это определяет архитектуру: что идёт в утренний бот, что в еженедельный скрипт, что в агент по вызову.</p></div>
+    </div>
+    <div class="step">
+      <div class="step-num">3</div>
+      <div class="step-body"><strong>Разбиваем по сложности реализации</strong><p>Быстро (1-2 дня): чистая автоматизация, данные есть, алгоритм простой. Средне (3-5 дней): нужна агентная логика или интеграция с API. Пока непонятно: оставляем на потом, не блокируем на них всё остальное.</p></div>
+    </div>
+    <div class="step">
+      <div class="step-num">4</div>
+      <div class="step-body"><strong>Пишем решение под каждый процесс</strong><p>Для каждого блока определяем: откуда берём данные / какой алгоритм / в каком формате выдаём результат / кто получатель.</p></div>
+    </div>
+    <div class="step">
+      <div class="step-num">5</div>
+      <div class="step-body"><strong>Собираем всё в единый Telegram-бот</strong><p>Один интерфейс управления для роли. Утренние сообщения приходят сами, остальное — по командам. Никаких отдельных ссылок и интерфейсов.</p></div>
+    </div>
+    <div class="step">
+      <div class="step-num">6</div>
+      <div class="step-body"><strong>Боевой тест</strong><p>Берём одну роль, одну неделю работаем только через бота. Фиксируем: что работает, что не так, сколько времени занимает задача у бота vs у человека. Итог → решение масштабировать или доработать.</p></div>
+    </div>
+  </div>
+
+  <h3 class="sub">Что остаётся человеку</h3>
+  <div class="human-grid">
+    <div class="human-card"><strong>Переговоры</strong><p>С поставщиками, фотографами, блогерами, партнёрами — ИИ не заменит живой коммуникации.</p></div>
+    <div class="human-card"><strong>Стратегия</strong><p>Квартальные и годовые решения о направлении бизнеса. ИИ готовит данные, человек решает.</p></div>
+    <div class="human-card"><strong>Финальный выбор новинок</strong><p>Данные даёт ИИ, но решение "запускаем / не запускаем" — всегда за человеком.</p></div>
+    <div class="human-card"><strong>Нестандартные ситуации</strong><p>Блокировки, претензии, конфликты — требуют суждения и контекста.</p></div>
+    <div class="human-card"><strong>Управление командой</strong><p>Найм финальный, увольнения, мотивация, разрешение конфликтов.</p></div>
+    <div class="human-card"><strong>Креатив</strong><p>Новые идеи, которых нет в данных. ИИ усиливает, но не заменяет.</p></div>
+  </div>
+</div>
+
+<!-- ===== МАТРИЦА ДНЯ ===== -->
+<div id="tab-matrix" class="tab-content">
+  <div class="role-header">
+    <h2>Матрица дня: когда что работает</h2>
+    <div class="desc">Разные автоматизации запускаются в разное время. Это определяет архитектуру всей системы.</div>
+  </div>
+
+  <div class="time-block">
+    <div class="time-label">Каждое утро — автоматически, до 9:00</div>
+    <table class="time-table">
+      <tr><td>РОП</td><td>Просадки ≥15% по артикулам, ДРР алерты, план/факт вчера, аномалии</td></tr>
+      <tr><td>Логист</td><td>Зона риска: кто уходит в ноль в ближайшие 7 дней</td></tr>
+      <tr><td>Менеджер Озон</td><td>Дайджест: заказы, выкупы, ДРР, бюджет</td></tr>
+      <tr><td>Контент</td><td>Новые отзывы с готовыми черновиками ответов</td></tr>
+      <tr><td>Финансист</td><td>P&amp;L за вчера: выручка, маржа, расходы</td></tr>
+    </table>
+  </div>
+
+  <div class="time-block">
+    <div class="time-label">В течение дня — по запросу или автотриггеру</div>
+    <table class="time-table">
+      <tr><td>Реклама</td><td>Проверка ставок, пересмотр кампаний, отмена автоакций</td></tr>
+      <tr><td>Акции</td><td>Вход/выход по алгоритму (маржа + остаток + эффект)</td></tr>
+      <tr><td>Карточки</td><td>SEO-чеклист, апдейты, публикация ответов на отзывы</td></tr>
+      <tr><td>Закупки</td><td>Алерты на изменение цен у поставщиков</td></tr>
+    </table>
+  </div>
+
+  <div class="time-block">
+    <div class="time-label">Раз в неделю — например, понедельник утро</div>
+    <table class="time-table">
+      <tr><td>Логист</td><td>ИЛ и ИРП — динамика за неделю + советы по улучшению</td></tr>
+      <tr><td>Финансист</td><td>Финансовый отчёт для директора</td></tr>
+      <tr><td>Контент</td><td>SEO-разбор карточек vs конкуренты</td></tr>
+      <tr><td>Все</td><td>База знаний — новые материалы из YouTube и статей за неделю</td></tr>
+    </table>
+  </div>
+
+  <div class="time-block">
+    <div class="time-label">Раз в месяц — 1-го числа</div>
+    <table class="time-table">
+      <tr><td>Финансист</td><td>Юнит-экономика по всем SKU: реальная маржа с учётом хранения и удержаний</td></tr>
+      <tr><td>Логист</td><td>Анализ возвратов: какие артикулы, почему, что фиксить</td></tr>
+      <tr><td>Продуктолог</td><td>Тренд-бук: что растёт в нише, что запускать следующим</td></tr>
+      <tr><td>Закупщик</td><td>Производственный план для новинок</td></tr>
+      <tr><td>Финансист</td><td>Платёжный календарь на следующий месяц</td></tr>
+    </table>
+  </div>
+</div>
+
+<!-- ===== СПРАВКА ===== -->
+<div id="tab-ref" class="tab-content">
+  <div class="role-header">
+    <h2>Справка: как это всё устроено</h2>
+    <div class="desc">Базовые понятия и ответы на частые вопросы.</div>
+  </div>
+
+  <h3 class="sub">Бот vs Агент vs Субагенты</h3>
+  <table class="ref-table">
+    <tr><th>Тип</th><th>Что умеет</th><th>Пример</th></tr>
+    <tr><td><strong>Бот</strong></td><td>Одно действие по расписанию или по команде</td><td>Дайджест новостей каждое утро</td></tr>
+    <tr><td><strong>Агент</strong></td><td>Получает цель → сам планирует шаги → вызывает инструменты → выдаёт результат</td><td>"Проанализируй конкурентов" → сам идёт в МП Статс, читает отзывы, пишет ТЗ</td></tr>
+    <tr><td><strong>Субагенты</strong></td><td>Агент запускает несколько задач параллельно</td><td>Утренний брифинг: WB + Ozon + остатки собираются одновременно, потом сводятся в одно сообщение</td></tr>
+  </table>
+
+  <h3 class="sub">Нужны ли подписки каждому сотруднику?</h3>
+  <div class="info-box">
+    <p><strong>Для всех ботов и агентов</strong> — нет. Достаточно одного API-ключа Anthropic. Платите за токены (за использование), не за людей. Все автоматизации работают от одного ключа.</p>
+    <br>
+    <p><strong>Для личного использования</strong> (когда человек сам хочет общаться с ИИ — писать промты, анализировать что-то руками) — тогда нужна личная подписка. По желанию, не обязательно.</p>
+    <br>
+    <p><strong>Практическое решение:</strong> API-ключ для всех автоматизаций (один), подписки — только тем, кто реально будет пользоваться лично каждый день.</p>
+  </div>
+
+  <h3 class="sub">Важные предупреждения (из опыта других)</h3>
+  <div class="info-box">
+    <p><strong>Проблема VPN.</strong> Claude нужен VPN, WB не работает с VPN. Это нужно решать на уровне сети до того, как раздавать доступы команде — иначе у каждого будет своя головная боль.</p>
+    <br>
+    <p><strong>Блокировки аккаунтов Anthropic.</strong> Регистрацию лучше централизовать и отработать один рабочий способ — не пускать каждого разбираться самому.</p>
+    <br>
+    <p><strong>Скиллы для личного использования.</strong> Если даёшь команде доступ к Claude напрямую — написать кастомные инструкции под каждую роль. Без этого люди не знают как им пользоваться.</p>
+  </div>
+</div>
+
+<script>
+function show(id) {
+  document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
+  document.getElementById('tab-' + id).classList.add('active');
+  event.target.classList.add('active');
+}
+</script>
+</body>
+</html>
